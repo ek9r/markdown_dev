@@ -19,9 +19,11 @@ final class Markdown
         );
     }
 
-    public function parse(string $content): ParsedMarkdown
+    public function parse(string $content, ?string $name = null): ParsedMarkdown
     {
-        return $this->parser->parse($content);
+        $parsed = $this->parser->parse($content);
+
+        return $name === null ? $parsed : new ParsedMarkdown($parsed->html, $parsed->frontmatter, $name);
     }
 
     public function withRules(Rule ...$rules): self
