@@ -1,0 +1,54 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Tempest\Markdown\Markdown;
+
+$path = $argv[1] ?? __DIR__ . '/../tests/Fixtures/infrastructure.md';
+
+if (! is_file($path)) {
+    fwrite(STDERR, "Could not read: {$path}\n");
+    exit(1);
+}
+
+$content = file_get_contents($path);
+
+$markdown = new Markdown();
+$chunks = $markdown->parseMany($content);
+
+$byType = [];
+
+foreach ($chunks as $chunk) {
+    $type = $chunk->frontmatter['type'] ?? 'unknown';
+    $byType[$type][] = $chunk;
+}
+
+$relationFields = ['runs_on', 'depends_on', 'composed_of'];
+$nameWidth = max(array_map(static fn ($chunk) => strlen($chunk->name), $chunks));
+
+foreach ($byType as $type => $entries) {
+    echo ucfirst($type) . "s:\n";
+
+    foreach ($entries as $chunk) {
+        $fm = $chunk->frontmatter;
+        $status = $fm['status'] ?? '?';
+
+        $relations = [];
+
+        foreach ($relationFields as $field) {
+            if (! empty($fm[$field])) {
+                $relations[] = "{$field}: " . implode(', ', $fm[$field]);
+            }
+        }
+
+        printf(
+            "  %-{$nameWidth}s [%s]%s\n",
+            $chunk->name,
+            $status,
+            $relations === [] ? '' : '  ' . implode('  ', $relations),
+        );
+    }
+
+    echo "\n";
+}

@@ -1,0 +1,42 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Tempest\Markdown\Markdown;
+
+$piece = file_get_contents(__DIR__ . '/../tests/Bench/Fixtures/01-small.md');
+$copies = 10;
+$rounds = 20;
+
+$markdown = new Markdown();
+
+// One warm-up round each, matching the repo's own bench methodology.
+$markdown->parse($piece);
+$markdown->parseMany($piece);
+
+// --- Scenario A: loop calling parse() over each piece individually ---
+$start = hrtime(true);
+for ($r = 0; $r < $rounds; $r++) {
+    for ($i = 0; $i < $copies; $i++) {
+        $markdown->parse($piece);
+    }
+}
+$loopMs = (hrtime(true) - $start) / 1_000_000;
+
+// --- Scenario B: parseMany() on the same content joined with markers ---
+$combined = implode("\n\n<!-- next -->\n\n", array_fill(0, $copies, $piece));
+
+$start = hrtime(true);
+for ($r = 0; $r < $rounds; $r++) {
+    $markdown->parseMany($combined);
+}
+$manyMs = (hrtime(true) - $start) / 1_000_000;
+
+$overheadMs = $manyMs - $loopMs;
+$overheadPct = ($overheadMs / $loopMs) * 100;
+
+printf("%d pieces x %d rounds%s", $copies, $rounds, PHP_EOL);
+printf("Loop over parse():  %8.3f ms (avg %.4f ms/piece)%s", $loopMs, $loopMs / ($copies * $rounds), PHP_EOL);
+printf("Single parseMany(): %8.3f ms (avg %.4f ms/piece)%s", $manyMs, $manyMs / ($copies * $rounds), PHP_EOL);
+printf("Overhead:           %8.3f ms (%.2f%%)%s", $overheadMs, $overheadPct, PHP_EOL);
