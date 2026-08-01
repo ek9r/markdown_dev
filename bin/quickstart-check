@@ -1,0 +1,38 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Tempest\Markdown\Markdown;
+
+$content = <<<MD
+---
+title: Quickstart Check
+---
+This is **bold** and this is *italic*.
+MD;
+
+$markdown = new Markdown();
+
+$markdown->parse($content);
+
+$iterations = 200;
+$start = hrtime(true);
+
+for ($i = 0; $i < $iterations; $i++) {
+    $parsed = $markdown->parse($content);
+}
+
+$avgMs = ((hrtime(true) - $start) / 1_000_000) / $iterations;
+
+echo "Frontmatter title: {$parsed->frontmatter['title']}\n";
+echo "Parsed output:\n{$parsed->html}\n";
+echo sprintf("\nTime to parse (avg over %d runs): %.4f ms\n", $iterations, $avgMs);
+
+if ($parsed->frontmatter['title'] === 'Quickstart Check' && str_contains($parsed->html, '<strong>bold</strong>')) {
+    echo "\nOK: quickstart works.\n";
+    exit(0);
+}
+
+echo "\nFAILED: unexpected result.\n";
+exit(1);

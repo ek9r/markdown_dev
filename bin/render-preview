@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+
+$patterns = [
+    '/<strong[^>]*>/' => "\033[1m", '#</strong>#' => "\033[0m",
+    '/<em[^>]*>/' => "\033[3m", '#</em>#' => "\033[0m",
+    '/<code[^>]*>/' => "\033[36m", '#</code>#' => "\033[0m",
+];
+
+while (($line = fgets(STDIN)) !== false) {
+    $line = preg_replace(array_keys($patterns), array_values($patterns), $line);
+    $line = preg_replace('/<[^>]+>/', '', $line);
+    echo $line;
+}
