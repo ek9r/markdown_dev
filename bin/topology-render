@@ -25,7 +25,11 @@ foreach ($chunks as $chunk) {
 }
 
 $relationFields = ['runs_on', 'depends_on', 'composed_of'];
-$nameWidth = max(array_map(static fn ($chunk) => strlen($chunk->name), $chunks));
+$nameWidth = 0;
+
+foreach ($chunks as $chunk) {
+    $nameWidth = max($nameWidth, strlen($chunk->name));
+}
 
 foreach ($byType as $type => $entries) {
     echo ucfirst($type) . "s:\n";

@@ -30,17 +30,14 @@ final class Markdown
         return $name === null ? $parsed : new ParsedMarkdown($parsed->html, $parsed->frontmatter, $name);
     }
 
-    /**
-     * @return list<ParsedMarkdown>
-     */
-    public function parseMany(string $content, ?string $baseName = null, string $keyword = 'next'): array
+    public function parseMany(string $content, ?string $baseName = null, string $keyword = 'next'): ParsedMarkdownCollection
     {
         $chunks = $this->splitter->split($content, $baseName, $keyword);
 
-        return array_map(
+        return new ParsedMarkdownCollection(array_map(
             fn (array $chunk): ParsedMarkdown => $this->parse($chunk['content'], $chunk['name']),
             $chunks,
-        );
+        ));
     }
 
     public function withRules(Rule ...$rules): self

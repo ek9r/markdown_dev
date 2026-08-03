@@ -1,0 +1,39 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Tempest\Markdown\Markdown;
+
+// Demonstrates ParsedMarkdownCollection (returned directly by parseMany())
+
+$path = $argv[1] ?? __DIR__ . '/../tests/Fixtures/infrastructure.md';
+
+if (! is_file($path)) {
+    fwrite(STDERR, "Could not read: {$path}\n");
+    exit(1);
+}
+
+$content = file_get_contents($path);
+
+$markdown = new Markdown();
+$collection = $markdown->parseMany($content);
+
+printf("Loaded %d chunk(s) from %s\n\n", count($collection), basename($path));
+
+$lookupName = $argv[2] ?? 'web-service';
+
+if (isset($collection[$lookupName])) {
+    $chunk = $collection[$lookupName];
+    printf("Direct lookup of \"%s\":\n", $lookupName);
+    printf("  type:   %s\n", $chunk->frontmatter['type'] ?? '?');
+    printf("  status: %s\n", $chunk->frontmatter['status'] ?? '?');
+} else {
+    printf("No chunk named \"%s\" in this file.\n", $lookupName);
+}
+
+echo "\nAll chunks (index -> name):\n";
+
+foreach ($collection as $index => $chunk) {
+    printf("  [%d] %s\n", $index, $chunk->name ?? '(unnamed)');
+}
