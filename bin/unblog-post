@@ -1,0 +1,27 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+$file = __DIR__ . '/../tests/Fixtures/unblog.md';
+
+if ($argc < 2) {
+    fwrite(STDERR, "Usage:\n");
+    fwrite(STDERR, "  php unblog-post \"Text\"\n");
+    exit(1);
+}
+
+$text = trim(implode(' ', array_slice($argv, 1)));
+
+$separator = (is_file($file) && filesize($file) > 0) ? "\n" : '';
+
+$entry = sprintf(
+    "%s<!-- next: %s -->\n%s\n",
+    $separator,
+    date(DATE_ATOM),
+    rtrim($text),
+);
+
+file_put_contents($file, $entry, FILE_APPEND);
+
+echo "Post added.\n";

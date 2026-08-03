@@ -1,0 +1,59 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+if (PHP_SAPI !== 'cli-server') {
+    $host = '127.0.0.1';
+    $port = $argv[1] ?? '8000';
+
+    fwrite(STDERR, "Serving UnBlog at http://{$host}:{$port}/ (Ctrl+C to stop)\n");
+    passthru('php -S ' . escapeshellarg("{$host}:{$port}") . ' ' . escapeshellarg(__FILE__));
+    exit;
+}
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Tempest\Markdown\Markdown;
+
+$file = __DIR__ . '/../tests/Fixtures/unblog.md';
+$content = is_file($file) ? file_get_contents($file) : '';
+
+$markdown = new Markdown();
+$posts = [];
+
+if ($content !== '') {
+    foreach ($markdown->parseMany($content) as $post) {
+        $posts[] = $post;
+    }
+}
+
+usort($posts, static fn ($a, $b): int => strcmp($b->name ?? '', $a->name ?? ''));
+
+header('Content-Type: text/html; charset=utf-8');
+?>
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>UnBlog</title>
+<style>
+body { max-width: 640px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+article { border-bottom: 1px solid #ddd; padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+time { color: #666; font-size: 0.9em; }
+.tags { font-size: 0.85em; color: #888; }
+</style>
+</head>
+<body>
+<h1>UnBlog</h1>
+<?php foreach ($posts as $post): ?>
+<article>
+<time><?= $post->name !== null ? date('Y-m-d H:i', strtotime($post->name)) : '' ?></time>
+<?= $post->html ?>
+<?php if (! empty($post->frontmatter['tags'])): ?>
+<div class="tags">Tags: <?= htmlspecialchars(implode(', ', $post->frontmatter['tags'])) ?></div>
+<?php endif; ?>
+</article>
+<?php endforeach; ?>
+</body>
+</html>
